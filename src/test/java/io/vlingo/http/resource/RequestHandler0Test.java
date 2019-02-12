@@ -10,6 +10,7 @@
 package io.vlingo.http.resource;
 
 import static io.vlingo.common.Completes.withSuccess;
+import static io.vlingo.http.Response.Status.InternalServerError;
 import static io.vlingo.http.Response.of;
 import static io.vlingo.http.Response.Status.Created;
 import static io.vlingo.http.resource.ParameterResolver.body;
@@ -22,6 +23,7 @@ import static org.junit.Assert.assertNotNull;
 import java.net.URI;
 import java.util.Collections;
 
+import io.vlingo.common.Completes;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -52,13 +54,11 @@ public class RequestHandler0Test extends RequestHandlerTestBase {
   }
 
   @Test
-  public void throwExceptionWhenNoHandlerIsDefined() {
-    thrown.expect(HandlerMissingException.class);
-    thrown.expectMessage("No handle defined for GET /helloworld");
-
+  public void defaultErrorStatusCodeWhenNoHandler() {
     final RequestHandler0 handler = new RequestHandler0(Method.GET, "/helloworld");
 
-    handler.execute();
+    Completes<Response> responseCompletes = handler.execute();
+    assertResponsesAreEquals(Response.of(InternalServerError), responseCompletes.await());
   }
 
   @Test

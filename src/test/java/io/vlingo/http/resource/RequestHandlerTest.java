@@ -7,13 +7,36 @@ import io.vlingo.http.Response;
 import io.vlingo.http.sample.user.NameData;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static io.vlingo.http.Response.Status.InternalServerError;
 import static org.junit.Assert.assertEquals;
 
-public class RequestHandlerTest {
+public class RequestHandlerTest extends RequestHandlerTestBase {
+
+  @Test
+  public void executionErrorUsesErrorHandlerWhenExceptionThrown() {
+  }
+
+  @Test
+  public void internalErrorReturnedWhenErrorHandlerFails() {
+    final RequestHandlerFake handler = new RequestHandlerFake(Method.GET, "/hello", new ArrayList<>());
+
+    ErrorHandler badHandler = (ex) -> {
+      throw new IllegalArgumentException("foo");
+    };
+
+    Response response = handler.execute(badHandler).await();
+    assertResponsesAreEquals(Response.of(InternalServerError),response);
+  }
+
+  @Test
+  public void internalErrorReturnedWhenNoErrorHandlerDefined() {
+  }
+
 
   @Test
   public void generateActionSignatureWhenNoPathIsSpecifiedIsEmptyString() {
@@ -73,5 +96,9 @@ class RequestHandlerFake extends RequestHandler {
   @Override
   Completes<Response> execute(final Request request, final Action.MappedParameters mappedParameters) {
     throw new UnsupportedOperationException();
+  }
+
+  Completes<Response> execute(ErrorHandler errorHandler) {
+    return executeRequest(() -> Completes.withSuccess(Response.of(Response.Status.Ok)), errorHandler);
   }
 }

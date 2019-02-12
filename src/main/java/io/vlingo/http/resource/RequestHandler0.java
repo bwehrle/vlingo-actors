@@ -19,14 +19,14 @@ import java.util.Collections;
 
 public class RequestHandler0 extends RequestHandler {
   private Handler0 handler;
+  private ErrorHandler errorHandler;
 
   RequestHandler0(final Method method, final String path) {
     super(method, path, Collections.emptyList());
   }
 
-  Completes<Response> execute() {
-    if (handler == null) throw new HandlerMissingException("No handle defined for " + method.toString() + " " + path);
-    return handler.execute();
+  Completes<Response> defaultErrorResponse() {
+    return Completes.withSuccess(Response.of(Response.Status.InternalServerError));
   }
 
   public RequestHandler0 handle(final Handler0 handler) {
@@ -34,10 +34,19 @@ public class RequestHandler0 extends RequestHandler {
     return this;
   }
 
+  public RequestHandler0 onError(final ErrorHandler errorHandler) {
+    this.errorHandler = errorHandler;
+    return this;
+  }
+
+  Completes<Response> execute() {
+    return executeRequest(() -> handler.execute(), errorHandler);
+  }
+
   @Override
   Completes<Response> execute(final Request request,
                               final Action.MappedParameters mappedParameters) {
-    return execute();
+    return executeRequest( () -> handler.execute(), errorHandler);
   }
 
   @FunctionalInterface
